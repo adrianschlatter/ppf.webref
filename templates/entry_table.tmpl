@@ -1,0 +1,18 @@
+<table>
+    <tr>
+        <th>author/editor</th>
+        <th>title</th>
+        <th>year</th>
+    </tr>
+    {% for entry in entries -%}
+    <tr>
+        <td>{{ entry['author'] or ""}}</td>
+        {% if entry['file'] is not none %}   
+        <td><a href="{{ entry['file'] }}">{{ entry['title'] }}</a></td>
+        {% else %}
+        <td>{{ entry['title'] }}</td>
+        {% endif %}
+        <td>{{ entry['year'] or ""}}</td>
+    </tr>
+    {% endfor %}
+</table>
