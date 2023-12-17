@@ -15,10 +15,6 @@ Note: ppf.webref provides *read-only* access to your library. To add, edit, or
 delete entries from your library, you still need a standard JabRef installation
 somewhere.
 
-<p align="middle">
-<img alt="Screenshot" src="imgs/webref_screenshot.png" height=180>
-</p>
-
 
 ## Installation
 

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>WebRef: A Web Interface to JabRef</title>
+    <title>ppf.webref: A Web Interface to JabRef</title>
     <link type="text/css" rel="stylesheet" href="style.css">
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"
@@ -17,7 +17,7 @@
 </head>
 
 <body>
-    <h1>WebRef: A Web Interface to JabRef</h1>
+    <h1>ppf.webref: A Web Interface to JabRef</h1>
     <p style="text-align: right"><a href="{{url_for('logout')}}">Logout</a></p>
     <form id="search_form" action="loadEntries.php">
         Search: <input type="text" name="searchexpr">

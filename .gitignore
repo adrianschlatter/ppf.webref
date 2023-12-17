@@ -1,18 +1,9 @@
 # to avoid leaking credentials to github:
-sqldatabasename
-sqlpassword
-sqlserver
-sqlusername
-secrets/
-docker-compose.yml
 hash_password.py
 
 # to avoid leaking references to github:
 references
 references/
-
-# because this relates to my personal config:
-config/www.webref.conf
 
 # general things to ignore:
 build/

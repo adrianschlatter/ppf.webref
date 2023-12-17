@@ -21,6 +21,8 @@ from flask_bcrypt import Bcrypt
 from flask_talisman import Talisman
 from ppf.jabref import Entry, Field, split_by_unescaped_sep
 from pathlib import Path
+from plumbum import cli
+from urllib.parse import quote_plus
 
 # Credential management
 #
@@ -31,16 +33,36 @@ from pathlib import Path
 # Inside the container, the named secret is available in the text file
 # /run/secrets/<secret-name>.
 
-if __name__ == '__main__':
-    secrets_path = Path('./secrets')
-else:
-    secrets_path = Path('/run/secrets')
 
-sqlusername = open(secrets_path / 'sqlusername').readline().strip()
-sqlpassword = open(secrets_path / 'sqlpassword').readline().strip()
-sqlserver = open(secrets_path / 'sqlserver').readline().strip()
-sqldatabasename = open(secrets_path / 'sqldatabasename').readline().strip()
+def get_secrets():
+    # read config:
+    config_path = Path('~/.config/ppf.webref/ppf.webref.conf').expanduser()
+    if __name__ == '__main__':
+        secrets_path = Path('./secrets')
+    else:
+        secrets_path = Path('/run/secrets')
 
+    if config_path.exists():
+        with cli.Config(config_path) as config:
+            sqlusername = config.get('database.username', None)
+            sqlpassword = config.get('database.password', None)
+            sqlserver = config.get('database.server', None)
+            sqldatabasename = config.get('database.databasename', None)
+    elif secrets_path.exists():
+        sqlusername = open(secrets_path / 'sqlusername').readline().strip()
+        sqlpassword = open(secrets_path / 'sqlpassword').readline().strip()
+        sqlserver = open(secrets_path / 'sqlserver').readline().strip()
+        sqldatabasename = (open(secrets_path / 'sqldatabasename')
+                           .readline().strip())
+    else:
+        raise RuntimeError('No config file found')
+
+    sqlpassword = quote_plus(sqlpassword)
+
+    return sqlusername, sqlpassword, sqlserver, sqldatabasename
+
+
+sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
 
 app = Flask(__name__,
             static_url_path='',
