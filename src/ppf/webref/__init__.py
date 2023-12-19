@@ -10,94 +10,17 @@ existing entries or to add new ones.
 
 from flask import Flask, render_template, request, send_from_directory
 from flask import url_for, redirect
-from flask_sqlalchemy import SQLAlchemy
-# from flask_sqlalchemy import sqlalchemy as sa
-from flask_login import UserMixin, login_user, LoginManager
+from flask_login import login_user, LoginManager
 from flask_login import login_required, logout_user
+from flask_bcrypt import Bcrypt
+from flask_talisman import Talisman
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
-from flask_bcrypt import Bcrypt
-from flask_talisman import Talisman
 from ppf.jabref import Entry, Field, split_by_unescaped_sep
 from pathlib import Path
-from plumbum import cli
-from urllib.parse import quote_plus
-
-# Credential management
-#
-# This application is meant to run inside a docker container.
-# Docker provides a mechanism to manage secrets. The user
-# creates a container, adds a (named) secret, and runs the
-# container.
-# Inside the container, the named secret is available in the text file
-# /run/secrets/<secret-name>.
-
-
-def get_secrets():
-    # read config:
-    config_path = Path('~/.config/ppf.webref/ppf.webref.conf').expanduser()
-    if __name__ == '__main__':
-        secrets_path = Path('./secrets')
-    else:
-        secrets_path = Path('/run/secrets')
-
-    if config_path.exists():
-        with cli.Config(config_path) as config:
-            sqlusername = config.get('database.username', None)
-            sqlpassword = config.get('database.password', None)
-            sqlserver = config.get('database.server', None)
-            sqldatabasename = config.get('database.databasename', None)
-    elif secrets_path.exists():
-        sqlusername = open(secrets_path / 'sqlusername').readline().strip()
-        sqlpassword = open(secrets_path / 'sqlpassword').readline().strip()
-        sqlserver = open(secrets_path / 'sqlserver').readline().strip()
-        sqldatabasename = (open(secrets_path / 'sqldatabasename')
-                           .readline().strip())
-    else:
-        raise RuntimeError('No config file found')
-
-    sqlpassword = quote_plus(sqlpassword)
-
-    return sqlusername, sqlpassword, sqlserver, sqldatabasename
-
-
-sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
-
-app = Flask(__name__,
-            static_url_path='',
-            static_folder='static')
-
-csp = {'default-src': "'none'",
-       'script-src':
-           "'self' https://code.jquery.com https://cdnjs.cloudflare.com",
-       'form-action': "'self'",
-       'connect-src': "'self'",
-       'style-src': "'self'",
-       'base-uri': "'none'",
-       'frame-ancestors': "'none'"}
-Talisman(app, content_security_policy=csp, force_https=False)
-app.config['SQLALCHEMY_DATABASE_URI'] = ('mysql+pymysql://'
-                                         f'{sqlusername}:{sqlpassword}'
-                                         f'@{sqlserver}/{sqldatabasename}')
-app.config['SECRET_KEY'] = '1YIYlxhBX6@el*ae'
-db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
+from .secrets import get_secrets
+from .model import db, User
 
 
 class LoginForm(FlaskForm):
@@ -108,67 +31,99 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
-@app.route('/')
-@login_required
-def root():
-    """Show WebApp."""
-    return render_template('index.php')
+def create_app(test_config=None):
+    # get secrets to access db:
+    sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
+    # create and configure the app:
+    app = Flask(__name__, static_url_path='', static_folder='static')
+    # database configuration:
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+            f'mysql+pymysql://{sqlusername}:{sqlpassword}'
+            f'@{sqlserver}/{sqldatabasename}')
+    app.config['SECRET_KEY'] = '1YIYlxhBX6@el*ae'
+    db.init_app(app)
 
+    # content security policy:
+    csp = {'default-src': "'none'",
+           'script-src':
+           "'self' https://code.jquery.com https://cdnjs.cloudflare.com",
+           'form-action': "'self'",
+           'connect-src': "'self'",
+           'style-src': "'self'",
+           'base-uri': "'none'",
+           'frame-ancestors': "'none'"}
+    Talisman(app, content_security_policy=csp, force_https=False)
+    bcrypt = Bcrypt(app)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'login'
 
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user:
-            if bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(url_for('root'))
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
-    return render_template('login.php', form=form)
+    @app.route('/')
+    @login_required
+    def root():
+        """Show WebApp."""
+        return render_template('index.php')
 
+    @app.route('/login', methods=['GET', 'POST'])
+    def login():
+        form = LoginForm()
 
-@app.route('/logout', methods=['GET', 'POST'])
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
+        if form.validate_on_submit():
+            user = User.query.filter_by(username=form.username.data).first()
+            if user:
+                if bcrypt.check_password_hash(
+                        user.password, form.password.data):
+                    login_user(user)
+                    return redirect(url_for('root'))
 
+        return render_template('login.php', form=form)
 
-@app.route('/references/<path:path>')
-@login_required
-def send_reference(path):
-    """Send reference."""
-    return send_from_directory('references', path)
+    @app.route('/logout', methods=['GET', 'POST'])
+    @login_required
+    def logout():
+        logout_user()
+        return redirect(url_for('login'))
 
+    @app.route('/references/<path:path>')
+    @login_required
+    def send_reference(path):
+        """Send reference."""
+        return send_from_directory('references', path)
 
-@app.route('/loadEntries.php', methods=['POST'])
-@login_required
-def loadEntries():
-    """Return entries from library matching search expression."""
-    searchexpr = request.form.get('searchexpr')
+    @app.route('/loadEntries.php', methods=['POST'])
+    @login_required
+    def loadEntries():
+        """Return entries from library matching search expression."""
+        searchexpr = request.form.get('searchexpr')
 
-    patternmatchingQ = (db.select(Field.entry_shared_id)
-                        .where(Field.value.op('rlike')(searchexpr))
-                        .distinct())
-    entryQ = (db.select(Entry)
-              .where(Entry.shared_id.in_(patternmatchingQ)))
+        patternmatchingQ = (db.select(Field.entry_shared_id)
+                            .where(Field.value.op('rlike')(searchexpr))
+                            .distinct())
+        entryQ = (db.select(Entry)
+                  .where(Entry.shared_id.in_(patternmatchingQ)))
 
-    entries = [{f: entry[0].fields.get(f, None)
-               for f in ['author', 'title', 'year', 'file']}
-               for entry in db.session.execute(entryQ)]
+        entries = [{f: entry[0].fields.get(f, None)
+                   for f in ['author', 'title', 'year', 'file']}
+                   for entry in db.session.execute(entryQ)]
 
-    basepath = Path('references')
-    for entry in entries:
-        if entry['file'] is not None:
-            filepath = Path(split_by_unescaped_sep(entry['file'])[1])
-            entry['file'] = basepath / filepath
-            if not entry['file'].exists() or filepath.is_absolute():
-                entry['file'] = None
+        basepath = Path('references')
+        for entry in entries:
+            if entry['file'] is not None:
+                filepath = Path(split_by_unescaped_sep(entry['file'])[1])
+                entry['file'] = basepath / filepath
+                if not entry['file'].exists() or filepath.is_absolute():
+                    entry['file'] = None
 
-    return render_template('entry_table.tmpl', entries=entries)
+        return render_template('entry_table.tmpl', entries=entries)
+
+    return app
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app = create_app()
+    app.run(debug=True, use_debugger=False, use_reloader=False)
