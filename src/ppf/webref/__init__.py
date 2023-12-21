@@ -21,6 +21,7 @@ from ppf.jabref import Entry, Field, split_by_unescaped_sep
 from pathlib import Path
 from .secrets import get_secrets
 from .model import db, User
+from .cli import reg_cli_cmds
 
 
 class LoginForm(FlaskForm):
@@ -42,6 +43,10 @@ def create_app(test_config=None):
             f'@{sqlserver}/{sqldatabasename}')
     app.config['SECRET_KEY'] = '1YIYlxhBX6@el*ae'
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
+    # register command-line tools:
+    reg_cli_cmds(app)
 
     # content security policy:
     csp = {'default-src': "'none'",

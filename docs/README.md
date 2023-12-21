@@ -49,55 +49,30 @@ flask --app ppf.webref run
 
 and point your webbrowser to http://localhost:5000.
 
-This will start ppf.webref on your local machine which is nice for testing.
+[This will start ppf.webref on your local machine which is nice for testing.
 To get the most out of ppf.webref, you will probably want to run ppf.webref on
-a web server.
+a web server.]
 
-As we have not created any users yet, we can't login. To create
-users, open your JabRef database (the one named in the config file above)
-and run this sql-code (make sure you don't have a table with this name
-already):
+ppf.webref will present a login form. However, as we have not created any users
+yet, we can't login. To create a user, run:
 
-```
-create table user (
-	id INT auto_increment,
-	username varchar(20) character set utf8 not null,
-	password char(80) character set ascii not null,
-	primary key (id),
-	unique(username)
-)
+```shell
+flask --app ppf.webref useradd <username>
 ```
 
-Now we have a user table but no users in it, yet. Let's find a password and
-hash it with the following python code (of course, we replace the dummy
-password with your own password beforehand):
+This will:
 
-```
-import bcrypt
+* create a table 'user' in your db if it does not exist, yet
+* register user <username> in user table
 
-password = 'This is my password'
+To set a password for this new user or to change the password of an existing
+user, do
 
-bytes = password.encode('utf-8')
-salt = bcrypt.gensalt()
-print(bcrypt.hashpw(bytes, salt))
+```shell
+flask --app ppf.webref passwd <username>
 ```
 
-The output looks something like this:
+which will ask for and store (a salted hash of) the password in the
+user table.
 
-```
-b'$2b$12$1royHRBq6o/mbDdO7LjR8eaThWYErI6HLLdn7MBfajtpRLlwWSJ8m'
-```
-
-Now add your user to the user table in you JabRef database using this sql-code
-(again, replace "webref" with your username and the password hash with the
-hash you generated above):
-
-```
-insert into user (username, password)
-values (
-	"webref",
-	"$2b$12$1royHRBq6o/mbDdO7LjR8eaThWYErI6HLLdn7MBfajtpRLlwWSJ8m"
-);
-```
-
-Now we are ready to go.
+Now we are able to login.
