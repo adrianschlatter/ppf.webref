@@ -32,15 +32,20 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
-def create_app(test_config=None):
+def create_app(test=False):
     # get secrets to access db:
     sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
     # create and configure the app:
     app = Flask(__name__, static_url_path='', static_folder='static')
     # database configuration:
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
+    if not test:
+        app.config['SQLALCHEMY_DATABASE_URI'] = (
             f'mysql+pymysql://{sqlusername}:{sqlpassword}'
             f'@{sqlserver}/{sqldatabasename}')
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.config['WTF_CSRF_ENABLED'] = False
+    app.config['TESTING'] = test
     app.config['SECRET_KEY'] = '1YIYlxhBX6@el*ae'
     db.init_app(app)
     with app.app_context():
