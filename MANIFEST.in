@@ -4,3 +4,8 @@ exclude tox.ini
 
 recursive-exclude .github *
 recursive-exclude tests *
+
+recursive-include src *.css
+recursive-include src *.js
+recursive-include src *.php
+recursive-include src *.tmpl
