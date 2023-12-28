@@ -112,7 +112,7 @@ def create_app(test=False):
         searchexpr = request.form.get('searchexpr')
 
         patternmatchingQ = (db.select(Field.entry_shared_id)
-                            .where(Field.value.op('rlike')(searchexpr))
+                            .where(Field.value.op('regexp')(searchexpr))
                             .distinct())
         entryQ = (db.select(Entry)
                   .where(Entry.shared_id.in_(patternmatchingQ)))
