@@ -45,6 +45,6 @@ def test_loadEntries(client_logged_in):
         response = client.post('loadEntries.php',
                                data={'searchexpr': 'Feedback'})
 
-    assert '<table>' in response.text
-    assert '</table>' in response.text
-    assert '<td>Feedback Systems</td>' in response.text
+    assert b'<table>' in response.data
+    assert b'</table>' in response.data
+    assert b'<td>Feedback Systems</td>' in response.data
