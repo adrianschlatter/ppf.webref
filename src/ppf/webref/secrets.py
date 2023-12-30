@@ -23,6 +23,7 @@ def get_secrets():
     config_path = Path('~/.config/ppf.webref/ppf.webref.conf').expanduser()
     if config_path.exists():
         with cli.Config(config_path) as config:
+            secret_key = config.get('flask.secret_key', None)
             sqlusername = config.get('database.username', None)
             sqlpassword = config.get('database.password', None)
             sqlserver = config.get('database.server', None)
@@ -33,6 +34,7 @@ def get_secrets():
             secrets_path = Path('./secrets')
 
         if secrets_path.exists():
+            secret_key = open(secrets_path / 'secret_key').readline().strip()
             sqlusername = open(secrets_path / 'sqlusername').readline().strip()
             sqlpassword = open(secrets_path / 'sqlpassword').readline().strip()
             sqlserver = open(secrets_path / 'sqlserver').readline().strip()
@@ -42,4 +44,4 @@ def get_secrets():
             raise RuntimeError('No config file found')
 
     sqlpassword = quote_plus(sqlpassword)
-    return sqlusername, sqlpassword, sqlserver, sqldatabasename
+    return secret_key, sqlusername, sqlpassword, sqlserver, sqldatabasename

@@ -2,14 +2,12 @@
 
 ppf.webref is a web app providing an interface to a [JabRef SQL
 database](https://docs.jabref.org/collaborative-work/sqldatabase).
-It allows you to access your references from anywhere in the world and from
-any device with a web browser. You do not need to install Java, you
-do not need to install an app. Any non-archaic phone, tablet, PC, Mac, or
-Raspberry Pi will do.
+Access your references from anywhere in the world and from any device with a
+web browser. You do not need to install Java, you do not need to install an
+app. Any non-archaic phone, tablet, PC, Mac, or Raspberry Pi will do.
 
-Create a JabRef database (using your normal JabRef) and configure ppf.webref 
-to point to this database. Voila: Your references just became accessible
-worldwide.
+Create a JabRef database (using your normal JabRef) and point ppf.webref to
+this database. Voila: Your references just became accessible worldwide.
 
 Note: ppf.webref provides *read-only* access to your library. To add, edit, or
 delete entries from your library, you still need a standard JabRef installation
@@ -34,11 +32,21 @@ Then, tell ppf.webref about your database by adding a section as follows to
 `~/.config/ppf.webref/ppf.webref.conf` (create it if it does not exist):
 
 ```
+[flask]
+secret_key = <your secret key here>
+
 [database]
 server = <server>:<port>
 databasename = <name of your jabref database>
 username = <username ppf.webref should use to access db>
 password = <password ppf.webref should use to access db>
+```
+
+`secret_key` is needed to encrypt cookies. Set it to a random string, e.g. by
+running this snippet:
+
+```shell
+python -c 'import secrets; print(secrets.token_hex())'
 ```
 
 Finally, run

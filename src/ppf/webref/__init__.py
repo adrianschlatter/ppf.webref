@@ -39,7 +39,8 @@ class SearchForm(FlaskForm):
 
 def create_app(test=False):
     # get secrets to access db:
-    sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
+    (secret_key,
+     sqlusername, sqlpassword, sqlserver, sqldatabasename) = get_secrets()
     # create and configure the app:
     app = Flask(__name__, static_url_path='', static_folder='static')
     # database configuration:
@@ -52,7 +53,7 @@ def create_app(test=False):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         app.config['WTF_CSRF_ENABLED'] = False
     app.config['TESTING'] = test
-    app.config['SECRET_KEY'] = '1YIYlxhBX6@el*ae'
+    app.config['SECRET_KEY'] = secret_key
     db.init_app(app)
     with app.app_context():
         db.create_all()

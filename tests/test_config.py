@@ -12,6 +12,8 @@ def secrets_local():
         environ['HOME'] = str(tempdir)  # test must not read personal config
 
         mkdir(tempdir / Path('secrets'))
+        with open(tempdir / Path('secrets/secret_key'), 'w') as f:
+            f.write('dev')
         with open(tempdir / Path('secrets/sqlserver'), 'w') as f:
             f.write('localhost:3307')
         with open(tempdir / Path('secrets/sqldatabasename'), 'w') as f:
@@ -44,7 +46,9 @@ def secrets_missing():
 
 
 def test_local_secrets(secrets_local):
-    sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
+    (secret_key,
+     sqlusername, sqlpassword, sqlserver, sqldatabasename) = get_secrets()
+    assert secret_key == 'dev'
     assert sqlusername == 'webrefuser'
     assert sqlpassword == 'sqlpassword'
     assert sqlserver == 'localhost:3307'

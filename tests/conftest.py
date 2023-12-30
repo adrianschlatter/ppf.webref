@@ -15,7 +15,9 @@ def app():
         mkdir(tempdir / Path('.config/ppf.webref'))
         with open(
                tempdir / Path('.config/ppf.webref/ppf.webref.conf'), 'w') as f:
-            f.write(linesep.join(['[database]',
+            f.write(linesep.join(['[flask]',
+                                  'secret_key = dev',
+                                  '[database]',
                                   'sqlusername = test',
                                   'sqlpassword = test',
                                   'sqlserver = test',
