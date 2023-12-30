@@ -18,9 +18,9 @@
 
 <body>
     <h1>ppf.webref: A Web Interface to JabRef</h1>
-    <p style="text-align: right"><a href="{{url_for('logout')}}">Logout</a></p>
     <form id="search_form" action="loadEntries.php">
         Search: <input type="text" name="searchexpr">
+    <p><a href="{{url_for('logout')}}">Logout</a></p>
     </form>
     <div id="entry_table">
         <!-- entries loaded from webserver will be shown here -->
