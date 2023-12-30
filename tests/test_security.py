@@ -29,13 +29,16 @@ def test_wrong_credentials(client, password):
         assert current_user.is_authenticated is False
 
 
-def test_correct_credentials(client):
+def test_correct_credentials(client, protected_endpoint):
     with client:
         client.post('login',
                     data={'username': 'existing_user', 'password': 'password'})
         assert current_user.is_authenticated is True
+        response = client.get(protected_endpoint)
         client.get('logout')
         assert current_user.is_authenticated is False
+        response = client.get(protected_endpoint)
+        assert response.status_code == 302
 
 
 def test_correct_credentials_missing_csrf_token(app):
