@@ -19,9 +19,9 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
 from ppf.jabref import Entry, Field, split_by_unescaped_sep
 from pathlib import Path
-from .secrets import get_secrets
-from .model import db, User
-from .cli import reg_cli_cmds
+from ppf.webref.secrets import get_secrets
+from ppf.webref.model import db, User
+from ppf.webref.cli import reg_cli_cmds
 
 
 class LoginForm(FlaskForm):
@@ -136,4 +136,4 @@ def create_app(test=False):
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True, use_debugger=False, use_reloader=False)
+    app.run(debug=True, use_debugger=False, use_reloader=False, host='0.0.0.0')
