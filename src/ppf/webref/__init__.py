@@ -8,13 +8,13 @@ provides read-only access to the library without any possibility to modify
 existing entries or to add new ones.
 """
 
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, send_from_directory
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
 from flask_login import login_required, logout_user
 from flask_bcrypt import Bcrypt
 from flask_talisman import Talisman
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
 from ppf.jabref import Entry, Field, split_by_unescaped_sep
@@ -32,6 +32,11 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 
+class SearchForm(FlaskForm):
+    searchexpr = StringField()
+    submit = SubmitField("Search")
+
+
 def create_app(test=False):
     # get secrets to access db:
     sqlusername, sqlpassword, sqlserver, sqldatabasename = get_secrets()
@@ -42,6 +47,7 @@ def create_app(test=False):
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f'mysql+pymysql://{sqlusername}:{sqlpassword}'
             f'@{sqlserver}/{sqldatabasename}')
+        app.config['WTF_CSRF_ENABLED'] = True
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         app.config['WTF_CSRF_ENABLED'] = False
@@ -52,6 +58,10 @@ def create_app(test=False):
         db.create_all()
     # register command-line tools:
     reg_cli_cmds(app)
+
+    # CSRF protection:
+    csrf = CSRFProtect()
+    csrf.init_app(app)
 
     # content security policy:
     csp = {'default-src': "'none'",
@@ -77,13 +87,13 @@ def create_app(test=False):
     @login_required
     def root():
         """Show WebApp."""
-        return render_template('index.php')
+        return render_template('index.php', form=SearchForm())
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         form = LoginForm()
 
-        if form.validate_on_submit():
+        if form.validate_on_submit():  # POST request? And valid?
             user = User.query.filter_by(username=form.username.data).first()
             if user:
                 if bcrypt.check_password_hash(
@@ -109,7 +119,8 @@ def create_app(test=False):
     @login_required
     def loadEntries():
         """Return entries from library matching search expression."""
-        searchexpr = request.form.get('searchexpr')
+        form = SearchForm()
+        searchexpr = form.searchexpr.data
 
         patternmatchingQ = (db.select(Field.entry_shared_id)
                             .where(Field.value.op('regexp')(searchexpr))

@@ -38,6 +38,16 @@ def test_correct_credentials(client):
         assert current_user.is_authenticated is False
 
 
+def test_correct_credentials_missing_csrf_token(app):
+    app.config['WTF_CSRF_ENABLED'] = True
+    client = app.test_client()
+    with client:
+        response = client.post('login', data={
+                        'username': 'existing_user', 'password': 'password'})
+        assert current_user.is_authenticated is False
+        assert b'CSRF token is missing' in response.data
+
+
 def test_password_special_chars(client, app, runner, password, monkeypatch):
     with app.app_context():
         runner.invoke(args=['useradd', 'test'])
