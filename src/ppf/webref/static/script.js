@@ -1,4 +1,3 @@
-
 $(document).ready(function () {
     // this is the id of the form
     $("#search_form").submit(function (e) {
@@ -11,6 +10,7 @@ $(document).ready(function () {
             type: "POST",
             url: url,
             data: form.serialize(), // serializes the form's elements.
+            headers: { 'X-CSRFToken': form.attr('csrf_token') },
             success: function (data) {
                 document.getElementById("entry_table").innerHTML = data;
             }

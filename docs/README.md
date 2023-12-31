@@ -1,16 +1,15 @@
-# WebRef
+# ppf.webref
 
-WebRef is a web interface to a [JabRef SQL database](https://docs.jabref.org/collaborative-work/sqldatabase).
-It allows you to access your references from anywhere in the world and from
-any device with a web browser. You do not need to install Java, you
-do not need to install an app. Any non-archaic phone, tablet, PC, Mac, or
-Raspberry Pi will do.
+ppf.webref is a web app providing an interface to a [JabRef SQL
+database](https://docs.jabref.org/collaborative-work/sqldatabase).
+Access your references from anywhere in the world and from any device with a
+web browser. You do not need to install Java, you do not need to install an
+app. Any non-archaic phone, tablet, PC, Mac, or Raspberry Pi will do.
 
-Create a JabRef database (using your normal JabRef) and configure WebRef 
-to point to this database. Voila: Your references just became accessible
-worldwide.
+Create a JabRef database (using your normal JabRef) and point ppf.webref to
+this database. Voila: Your references just became accessible worldwide.
 
-Note: WebRef provides *read-only* access to your library. To add, edit, or
+Note: ppf.webref provides *read-only* access to your library. To add, edit, or
 delete entries from your library, you still need a standard JabRef installation
 somewhere.
 
@@ -21,76 +20,67 @@ somewhere.
 
 ## Installation
 
-You need:
+Prerequisite: You need JabRef to create, edit, and extend your library.
 
-* JabRef: To create, edit, and extend your library
-* Docker: To create and run docker images
+Install ppf.webref:
 
-
-Steps:
-
-* Clone this repo
-* Create a suitable docker-compose.yml (use
-  [docker-compose_templ.yml](../docker-compose_templ.yml) as a starting point)
-* Create the following text files (assuming you did not change the paths
-  from the template docker-compose.yml):
-  - ./secrets/sqlusername: Username used to access your JabRef database
-  - ./secrets/sqlpassword: Password for that username
-  - ./secrets/sqlserver: The sql server holding your JabRef database
-  - ./secrets/sqldatabasename: The name of your JabRef database 
-* Run ```docker-compose up```
-* Point your webbrowser to localhost:7000 (or where you configured your
-  WebRef to be)
-
-This will start WebRef on your local machine which is nice for testing.
-To get the most out of WebRef, you will probably want to
-run this docker image on a web server.
-
-As we have not created any users yet, we can't login. To create
-users, open your JabRef database (the one named in ./secrets/sqldatabasename)
-and run this sql-code (make sure you don't have a table with this name
-already):
-
-```
-create table user (
-	id INT auto_increment,
-	username varchar(20) character set utf8 not null,
-	password char(80) character set ascii not null,
-	primary key (id),
-	unique(username)
-)
+```shell
+pip install ppf.webref
 ```
 
-Now we have a user table but no users in it, yet. Let's find a password and hash
-it with the following python code (of course, we replace the dummy password
-with your own password beforehand):
+Then, tell ppf.webref about your database by adding a section as follows to
+`~/.config/ppf.webref/ppf.webref.conf` (create it if it does not exist):
 
 ```
-import bcrypt
+[flask]
+secret_key = <your secret key here>
 
-password = 'This is my password'
-
-bytes = password.encode('utf-8')
-salt = bcrypt.gensalt()
-print(bcrypt.hashpw(bytes, salt))
+[database]
+server = <server>:<port>
+databasename = <name of your jabref database>
+username = <username ppf.webref should use to access db>
+password = <password ppf.webref should use to access db>
 ```
 
-The output looks something like this:
+`secret_key` is needed to encrypt cookies. Set it to a random string, e.g. by
+running this snippet:
 
-```
-b'$2b$12$1royHRBq6o/mbDdO7LjR8eaThWYErI6HLLdn7MBfajtpRLlwWSJ8m'
-```
-
-Now add your user to the user table in you JabRef database using this sql-code
-(again, replace "webref" with your username and the password hash with the
-hash you generated above):
-
-```
-insert into user (username, password)
-values (
-	"webref",
-	"$2b$12$1royHRBq6o/mbDdO7LjR8eaThWYErI6HLLdn7MBfajtpRLlwWSJ8m"
-);
+```shell
+python -c 'import secrets; print(secrets.token_hex())'
 ```
 
-Now we are ready to go.
+Finally, run
+
+```shell
+flask --app ppf.webref run
+```
+
+and point your webbrowser to http://localhost:5000.
+
+[This will start ppf.webref on your local machine which is nice for testing.
+To get the most out of ppf.webref, you will probably want to run ppf.webref on
+a web server.]
+
+ppf.webref will present a login form. However, as we have not created any users
+yet, we can't login. To create a user, run:
+
+```shell
+flask --app ppf.webref useradd <username>
+```
+
+This will:
+
+* create a table 'user' in your db if it does not exist, yet
+* register user <username> in user table
+
+To set a password for this new user or to change the password of an existing
+user, do
+
+```shell
+flask --app ppf.webref passwd <username>
+```
+
+which will ask for and store (a salted hash of) the password in the
+user table.
+
+Now we are able to login.

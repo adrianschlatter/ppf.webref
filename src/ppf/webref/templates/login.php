@@ -9,8 +9,8 @@
 <body>
     <h1>Login Page</h1>
 
-    <form method="POST" action="">
-        {{ form.hidden_tag() }}
+    <form method="POST" action="{{ url_for('login') }}">
+        {{ form.csrf_token }}
         {{ form.username }}
         {{ form.password }}
         {{ form.submit }}
