@@ -48,10 +48,10 @@ def create_app(test=False):
         app.config['SQLALCHEMY_DATABASE_URI'] = (
             f'mysql+pymysql://{sqlusername}:{sqlpassword}'
             f'@{sqlserver}/{sqldatabasename}')
-        app.config['WTF_CSRF_ENABLED'] = True
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        app.config['WTF_CSRF_ENABLED'] = False
+
+    app.config['WTF_CSRF_ENABLED'] = not test
     app.config['TESTING'] = test
     app.config['SECRET_KEY'] = secret_key
     db.init_app(app)
