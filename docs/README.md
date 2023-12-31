@@ -18,11 +18,13 @@ somewhere.
 </p>
 
 
-## Installation
+# Installation
 
 Prerequisite: You need JabRef to create, edit, and extend your library.
 
-Install ppf.webref:
+Install `ppf.webref` (or have a look at
+[docker.webref](https://github.com/adrianschlatter/docker.webref) that provides
+a docker container running `ppf.webref`):
 
 ```shell
 pip install ppf.webref
@@ -83,4 +85,34 @@ flask --app ppf.webref passwd <username>
 which will ask for and store (a salted hash of) the password in the
 user table.
 
-Now we are able to login.
+Now we are able to login, but the entry table will not provide links to our
+documents. For `ppf.webref` to be able to serve the documents themselves, we
+have to put them under `<app.root_path>/references` (just place a symlink to
+your JabRef library there). The app's root path is something like
+`/usr/local/lib/python3.11/site-packages/ppf/webref/`.
+
+
+# Still reading?
+
+If you read this far, you're probably not here for the first time. If you use
+and like this project, would you consider giving it a Github Star? (The button
+is at the top of this website.) If not, maybe you're interested in one of my
+[my other
+projects](https://github.com/adrianschlatter/ppf.sample/blob/develop/docs/list_of_projects.md)?
+
+
+# Contributing
+
+Did you find a bug and would like to report it? Or maybe you've fixed it
+already or want to help fixing it? That's great! Please read
+[CONTRIBUTING](./CONTRIBUTING.md) to learn how to proceed from there.
+
+To help ascertain that contributing to this project is a pleasant experience,
+we have established a [code of conduct](./CODE_OF_CONDUCT.md). You can expect
+everyone to adhere to it, just make sure you do as well.
+
+
+# Changelog
+
+* 0.1.1: Fix problem with path handling. Improve README.md.
+* 0.1: Basic read-only functionality
