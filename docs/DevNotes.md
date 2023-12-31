@@ -25,6 +25,13 @@
     - If you run into the "Bad Request - The CSRF session token is missing."
       problem, make sure to read [Fix Missing CSRF Token Issues with
       Flask](https://nickjanetakis.com/blog/fix-missing-csrf-token-issues-with-flask)
+    - And if you start losing your mind while trying to fix CSRF problems: Try
+      running it in your production environment. I was unable to make it work
+      locally, I was unable to make it work on a test host, but it works on my
+      production server. Maybe this is related to the cookie problem related to
+      FQDNs mentioned in the article above: Neither my local computer nor my
+      test host have a fully qualified domain name but my production server
+      has.
 * login: JabRef library is only available to logged-in users
 
 
