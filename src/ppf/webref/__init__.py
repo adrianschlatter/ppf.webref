@@ -133,12 +133,14 @@ def create_app(test=False):
                    for f in ['author', 'title', 'year', 'file']}
                    for entry in db.session.execute(entryQ)]
 
-        basepath = Path('references')
+        flaskpath = Path('references')
+        basepath = Path(app.root_path)
         for entry in entries:
             if entry['file'] is not None:
                 filepath = Path(split_by_unescaped_sep(entry['file'])[1])
-                entry['file'] = basepath / filepath
-                if not entry['file'].exists() or filepath.is_absolute():
+                entry['file'] = flaskpath / filepath
+                if not (basepath / entry['file']).exists() \
+                        or filepath.is_absolute():
                     entry['file'] = None
 
         return render_template('entry_table.tmpl', entries=entries)

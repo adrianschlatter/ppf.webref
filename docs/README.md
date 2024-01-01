@@ -18,18 +18,19 @@ somewhere.
 </p>
 
 
-## Installation
+# Installation
 
 Prerequisite: You need JabRef to create, edit, and extend your library.
 
-Install ppf.webref:
+Install `ppf.webref` (or have a look at
+[docker.webref](https://github.com/adrianschlatter/docker.webref) that provides
+a docker container running `ppf.webref`):
 
 ```shell
 pip install ppf.webref
 ```
 
-Then, tell ppf.webref about your database by adding a section as follows to
-`~/.config/ppf.webref/ppf.webref.conf` (create it if it does not exist):
+Then, create the config file `~/.config/ppf.webref/ppf.webref.conf`:
 
 ```
 [flask]
@@ -49,7 +50,7 @@ running this snippet:
 python -c 'import secrets; print(secrets.token_hex())'
 ```
 
-Finally, run
+You can now start the web server by
 
 ```shell
 flask --app ppf.webref run
@@ -59,7 +60,7 @@ and point your webbrowser to http://localhost:5000.
 
 [This will start ppf.webref on your local machine which is nice for testing.
 To get the most out of ppf.webref, you will probably want to run ppf.webref on
-a web server.]
+a server.]
 
 ppf.webref will present a login form. However, as we have not created any users
 yet, we can't login. To create a user, run:
@@ -70,7 +71,7 @@ flask --app ppf.webref useradd <username>
 
 This will:
 
-* create a table 'user' in your db if it does not exist, yet
+* create a table 'user' in your db if it does not exist yet
 * register user <username> in user table
 
 To set a password for this new user or to change the password of an existing
@@ -83,4 +84,34 @@ flask --app ppf.webref passwd <username>
 which will ask for and store (a salted hash of) the password in the
 user table.
 
-Now we are able to login.
+Now we are able to login, but the entry table will not provide clickable links
+so you can easily open your documents. For `ppf.webref` to be able to serve the
+documents themselves, we have to put them under `<app.root_path>/references`
+(just place a symlink to your JabRef library there). The app's root path is
+something like `/usr/local/lib/python3.11/site-packages/ppf/webref/`.
+
+
+# Still reading?
+
+If you read this far, you're probably not here for the first time. If you use
+and like this project, would you consider giving it a Github Star? (The button
+is at the top of this website.) If not, maybe you're interested in one of my
+[my other
+projects](https://github.com/adrianschlatter/ppf.sample/blob/develop/docs/list_of_projects.md)?
+
+
+# Contributing
+
+Did you find a bug and would like to report it? Or maybe you've fixed it
+already or want to help fixing it? That's great! Please read
+[CONTRIBUTING](./CONTRIBUTING.md) to learn how to proceed.
+
+To help ascertain that contributing to this project is a pleasant experience,
+we have established a [code of conduct](./CODE_OF_CONDUCT.md). You can expect
+everyone to adhere to it, just make sure you do as well.
+
+
+# Changelog
+
+* 0.1.1: Fix problem with path handling. Improve docs.
+* 0.1: Basic read-only functionality
