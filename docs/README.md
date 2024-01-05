@@ -1,5 +1,7 @@
 # ppf.webref
 
+<img alt="pypi downloads/month" src="https://img.shields.io/pypi/dm/ppf.webref.svg">
+
 ppf.webref is a web app providing an interface to a [JabRef SQL
 database](https://docs.jabref.org/collaborative-work/sqldatabase).
 Access your references from anywhere in the world and from any device with a
