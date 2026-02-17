@@ -27,6 +27,7 @@ from pathlib import Path
 from ppf.webref.secrets import get_secrets
 from ppf.webref.model import db, User
 from ppf.webref.cli import reg_cli_cmds
+from ppf.webref.passwords import check_password
 
 
 __version__ = version(__name__)
@@ -82,7 +83,7 @@ def create_app(test=False):
            'base-uri': "'none'",
            'frame-ancestors': "'none'"}
     Talisman(app, content_security_policy=csp, force_https=False)
-    bcrypt = Bcrypt(app)
+    Bcrypt(app)
 
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -105,8 +106,7 @@ def create_app(test=False):
         if form.validate_on_submit():  # POST request? And valid?
             user = User.query.filter_by(username=form.username.data).first()
             if user:
-                if bcrypt.check_password_hash(
-                        user.password, form.password.data):
+                if check_password(form.password.data, user.pw_hash):
                     login_user(user)
                     return redirect(url_for('root'))
 
