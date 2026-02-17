@@ -1,8 +1,8 @@
 import click
 from getpass import getpass
-import bcrypt
 import sys
 from .model import db, User
+from .passwords import hash_password
 
 
 @click.command('useradd')
@@ -12,7 +12,7 @@ def useradd_command(username):
     # Make sure relevant tables exist:
     db.create_all()
     # Create user <username> without password:
-    user = User(username=username, password=None)
+    user = User(username=username, pw_hash=None)
     # Check whether this user already exists:
     if User.query.filter_by(username=username).first():
         print(f'User {username} already exists.')
@@ -54,11 +54,8 @@ def passwd_command(username):
     print(f'Changing password for {username}.')
     # If so, change password:
     password = getpass()
-    # Salt it and hash it:
-    bytes = password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    # Store it:
-    user.password = bcrypt.hashpw(bytes, salt)
+    # Store a salted hash:
+    user.pw_hash = hash_password(password)
     db.session.commit()
     print(f'Changed password for {username}.')
 
