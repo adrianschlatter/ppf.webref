@@ -8,6 +8,11 @@ provides read-only access to the library without any possibility to modify
 existing entries or to add new ones.
 """
 
+try:
+    from importlib_metadata import version
+except ImportError:                                     # pragma: no cover
+    from importlib.metadata import version              # pragma: no cover
+
 from flask import Flask, render_template, send_from_directory
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
@@ -22,6 +27,9 @@ from pathlib import Path
 from ppf.webref.secrets import get_secrets
 from ppf.webref.model import db, User
 from ppf.webref.cli import reg_cli_cmds
+
+
+__version__ = version(__name__)
 
 
 class LoginForm(FlaskForm):
