@@ -3,6 +3,7 @@ from os import environ, mkdir, chdir, getcwd
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from ppf.webref.secrets import get_secrets
+import ppf.webref.secrets as secrets
 
 
 @pytest.fixture()
@@ -45,7 +46,13 @@ def secrets_missing():
         chdir(cwd)
 
 
-def test_local_secrets(secrets_local):
+def test_local_secrets(secrets_local, monkeypatch):
+    def fake_path(value):
+        if value == '/run/secrets':
+            return Path('does-not-exist')
+        return Path(value)
+
+    monkeypatch.setattr(secrets, 'Path', fake_path)
     (secret_key,
      sqlusername, sqlpassword, sqlserver, sqldatabasename) = get_secrets()
     assert secret_key == 'dev'
@@ -53,6 +60,39 @@ def test_local_secrets(secrets_local):
     assert sqlpassword == 'sqlpassword'
     assert sqlserver == 'localhost:3307'
     assert sqldatabasename == 'webrefdb'
+
+
+def test_run_secrets(monkeypatch):
+    with TemporaryDirectory() as tempdir:
+        tempdir = Path(tempdir)
+        run_secrets = tempdir / 'run_secrets'
+        run_secrets.mkdir()
+        environ['HOME'] = str(tempdir)
+
+        with open(run_secrets / 'secret_key', 'w') as f:
+            f.write('dev')
+        with open(run_secrets / 'sqlserver', 'w') as f:
+            f.write('localhost:3307')
+        with open(run_secrets / 'sqldatabasename', 'w') as f:
+            f.write('webrefdb')
+        with open(run_secrets / 'sqlusername', 'w') as f:
+            f.write('webrefuser')
+        with open(run_secrets / 'sqlpassword', 'w') as f:
+            f.write('sqlpassword')
+
+        def fake_path(value):
+            if value == '/run/secrets':
+                return run_secrets
+            return Path(value)
+
+        monkeypatch.setattr(secrets, 'Path', fake_path)
+        (secret_key,
+         sqlusername, sqlpassword, sqlserver, sqldatabasename) = get_secrets()
+        assert secret_key == 'dev'
+        assert sqlusername == 'webrefuser'
+        assert sqlpassword == 'sqlpassword'
+        assert sqlserver == 'localhost:3307'
+        assert sqldatabasename == 'webrefdb'
 
 
 def test_no_config(secrets_missing):
