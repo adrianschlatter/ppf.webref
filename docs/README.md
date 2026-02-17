@@ -115,5 +115,6 @@ everyone to adhere to it, just make sure you do as well.
 
 # Changelog
 
+* 0.1.2: Upgrade vulnerable dependencies, improve storage of hashes
 * 0.1.1: Fix problem with path handling. Improve docs.
 * 0.1: Basic read-only functionality
