@@ -17,7 +17,6 @@ from flask import Flask, render_template, send_from_directory
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
 from flask_login import login_required, logout_user
-from flask_bcrypt import Bcrypt
 from flask_talisman import Talisman
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, SubmitField
@@ -83,7 +82,6 @@ def create_app(test=False):
            'base-uri': "'none'",
            'frame-ancestors': "'none'"}
     Talisman(app, content_security_policy=csp, force_https=False)
-    Bcrypt(app)
 
     login_manager = LoginManager()
     login_manager.init_app(app)

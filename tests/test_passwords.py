@@ -1,27 +1,18 @@
-import hashlib
-
-from ppf.webref.passwords import _password_bytes, hash_password, check_password
+from ppf.webref.passwords import hash_password, check_password
 
 
-def test_password_bytes_from_str():
-    result = _password_bytes("password")
-    expected = hashlib.sha256(b"password").hexdigest().encode("utf-8")
-    assert result == expected
-    assert isinstance(result, bytes)
-    assert len(result) == 64
-
-
-def test_password_bytes_from_bytes():
-    raw = b"password"
-    result = _password_bytes(raw)
-    expected = hashlib.sha256(raw).hexdigest().encode("utf-8")
-    assert result == expected
-
-
-def test_hash_password_length():
+def test_hash_password_scrypt():
     pw_hash = hash_password("password")
-    assert isinstance(pw_hash, bytes)
-    assert len(pw_hash) == 60
+    assert isinstance(pw_hash, str)
+    assert pw_hash.startswith("scrypt:")
+
+
+def test_hash_password_bytes_raises():
+    try:
+        hash_password(b"password")
+        assert False
+    except TypeError:
+        assert True
 
 
 def test_check_password_true():
@@ -29,11 +20,20 @@ def test_check_password_true():
     assert check_password("password", pw_hash) is True
 
 
-def test_check_password_str_hash():
-    pw_hash = hash_password("password").decode("utf-8")
-    assert check_password("password", pw_hash) is True
+def test_check_password_bytes_password():
+    pw_hash = hash_password("password")
+    assert check_password(b"password", pw_hash) is False
+
+
+def test_check_password_bytes_hash():
+    pw_hash = hash_password("password").encode("utf-8")
+    assert check_password("password", pw_hash) is False
 
 
 def test_check_password_false():
     pw_hash = hash_password("password")
     assert check_password("not-password", pw_hash) is False
+
+
+def test_check_password_empty_hash():
+    assert check_password("password", None) is False

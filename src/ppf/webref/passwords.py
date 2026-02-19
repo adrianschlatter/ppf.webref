@@ -1,22 +1,17 @@
-import bcrypt
-import hashlib
-
-
-def _password_bytes(password):
-    if isinstance(password, str):
-        password = password.encode('utf-8')
-    password = hashlib.sha256(password).hexdigest().encode('utf-8')
-    return password
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 def hash_password(password):
-    password = _password_bytes(password)
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password, salt)
+    if not isinstance(password, str):
+        raise TypeError('password must be a string')
+    return generate_password_hash(password, method='scrypt', salt_length=16)
 
 
 def check_password(password, pw_hash):
-    password = _password_bytes(password)
-    if isinstance(pw_hash, str):
-        pw_hash = pw_hash.encode('utf-8')
-    return bcrypt.checkpw(password, pw_hash)
+    if not pw_hash:
+        return False
+    if not isinstance(password, str):
+        return False
+    if not isinstance(pw_hash, str):
+        return False
+    return check_password_hash(pw_hash, password)

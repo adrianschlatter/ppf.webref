@@ -11,7 +11,7 @@ db = SQLAlchemy()
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
-    pw_hash = db.Column(db.LargeBinary(60), nullable=True)
+    pw_hash = db.Column(db.Text, nullable=True)
 
 
 # Everything below:
