@@ -21,12 +21,13 @@ from flask_talisman import Talisman
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
-from ppf.jabref import Entry, Field, split_by_unescaped_sep
+from ppf.jabref import Entry, split_by_unescaped_sep
 from pathlib import Path
 from ppf.webref.secrets import get_secrets
 from ppf.webref.model import db, User
 from ppf.webref.cli import reg_cli_cmds
 from ppf.webref.passwords import check_password
+from ppf.webref.search import build_entry_id_query
 
 
 __version__ = version(__name__)
@@ -129,11 +130,9 @@ def create_app(test=False):
         form = SearchForm()
         searchexpr = form.searchexpr.data
 
-        patternmatchingQ = (db.select(Field.entry_shared_id)
-                            .where(Field.value.op('regexp')(searchexpr))
-                            .distinct())
+        entry_ids = build_entry_id_query(searchexpr)
         entryQ = (db.select(Entry)
-                  .where(Entry.shared_id.in_(patternmatchingQ)))
+                  .where(Entry.shared_id.in_(entry_ids)))
 
         entries = [{f: entry[0].fields.get(f, None)
                    for f in ['author', 'title', 'year', 'file']}

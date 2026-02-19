@@ -95,3 +95,31 @@ def test_loadEntries(client_logged_in, app):
     assert b'<td>Feedback Without File</td>' in response.data
 
     reference_path.unlink()
+
+
+def test_loadEntries_field_query(client_logged_in):
+    with client_logged_in as client:
+        response = client.post('loadEntries.php',
+                               data={'searchexpr': 'author:Åström'})
+
+    assert b'Feedback Systems' in response.data
+    assert b'Feedback Missing File' not in response.data
+
+
+def test_loadEntries_logical_query(client_logged_in):
+    with client_logged_in as client:
+        response = client.post(
+            'loadEntries.php',
+            data={'searchexpr': 'title:"Feedback Systems" AND year:2020'})
+
+    assert b'Feedback Systems' in response.data
+    assert b'Feedback Missing File' not in response.data
+
+
+def test_loadEntries_invalid_field(client_logged_in):
+    with client_logged_in as client:
+        response = client.post('loadEntries.php',
+                               data={'searchexpr': 'editor:Smith'})
+
+    assert b'Feedback Systems' not in response.data
+    assert b'Feedback Missing File' not in response.data
