@@ -17,14 +17,38 @@
 </head>
 
 <body>
-    <h1>ppf.webref: A Web Interface to JabRef</h1>
-    <p><a href="{{url_for('logout')}}">Logout</a></p>
-    <form id="search_form" action="{{ url_for('loadEntries') }}">
-        {{ form.csrf_token }}
-        {{ form.searchexpr }}
-    </form>
-    <div id="entry_table">
-        <!-- entries loaded from webserver will be shown here -->
+    <div id="top_bar">
+        <h1>ppf.webref: A Web Interface to JabRef</h1>
+        <p><a href="{{url_for('logout')}}">Logout</a></p>
+        <form id="search_form" action="{{ url_for('loadEntries') }}">
+            {{ form.csrf_token }}
+            {{ form.searchexpr }}
+        </form>
+    </div>
+    <div id="entry_table_container">
+        <div id="entry_table">
+            <!-- entries loaded from webserver will be shown here -->
+        </div>
+    </div>
+    <div id="entry_viewer" class="hidden">
+        <div id="entry_viewer_header">
+            <h2>Entry details</h2>
+            <button id="entry_viewer_close" type="button">Close</button>
+        </div>
+        <dl id="entry_viewer_details">
+            <dt>Title</dt>
+            <dd id="entry_viewer_title"></dd>
+            <dt>Authors</dt>
+            <dd id="entry_viewer_authors"></dd>
+            <dt>Date</dt>
+            <dd id="entry_viewer_date"></dd>
+            <dt>Type</dt>
+            <dd id="entry_viewer_type"></dd>
+            <dt>Citation key</dt>
+            <dd id="entry_viewer_citationkey"></dd>
+            <dt>Files</dt>
+            <dd id="entry_viewer_files"></dd>
+        </dl>
     </div>
 </body>
 

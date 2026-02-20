@@ -5,7 +5,7 @@
         <th>year</th>
     </tr>
     {% for entry in entries -%}
-    <tr>
+    <tr class="entry-row" data-shared-id="{{ entry['shared_id'] }}">
         <td>{{ entry['author'] or ""}}</td>
         {% if entry['file'] is not none %}   
         <td><a href="{{ entry['file'] }}">{{ entry['title'] }}</a></td>

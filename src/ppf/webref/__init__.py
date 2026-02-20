@@ -13,7 +13,7 @@ try:
 except ImportError:                                     # pragma: no cover
     from importlib.metadata import version              # pragma: no cover
 
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, jsonify, request
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
 from flask_login import login_required, logout_user
@@ -21,7 +21,7 @@ from flask_talisman import Talisman
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
-from ppf.jabref import Entry, split_by_unescaped_sep
+from ppf.jabref import Entry, Link, split_by_unescaped_sep
 from pathlib import Path
 from ppf.webref.secrets import get_secrets
 from ppf.webref.model import db, User
@@ -134,8 +134,9 @@ def create_app(test=False):
         entryQ = (db.select(Entry)
                   .where(Entry.shared_id.in_(entry_ids)))
 
-        entries = [{f: entry[0].fields.get(f, None)
-                   for f in ['author', 'title', 'year', 'file']}
+        entries = [{'shared_id': entry[0].shared_id,
+                    **{f: entry[0].fields.get(f, None)
+                       for f in ['author', 'title', 'year', 'file']}}
                    for entry in db.session.execute(entryQ)]
 
         flaskpath = Path('references')
@@ -149,6 +150,50 @@ def create_app(test=False):
                     entry['file'] = None
 
         return render_template('entry_table.tmpl', entries=entries)
+
+    @app.route('/getEntry', methods=['GET'])
+    @login_required
+    def get_entry():
+        shared_id = request.args.get('shared_id', type=int)
+        if shared_id is None:
+            return jsonify({'error': 'shared_id is required'}), 400
+
+        entry = db.session.get(Entry, shared_id)
+        if entry is None:
+            return jsonify({'error': 'Entry not found'}), 404
+
+        fields = entry.fields
+
+        files = []
+        file_value = fields.get('file', '')
+        if file_value:
+            flaskpath = Path('references')
+            basepath = Path(app.root_path)
+            links = split_by_unescaped_sep(file_value, ';')
+            for link in links:
+                parts = [Link.unescape(part)
+                         for part in split_by_unescaped_sep(link, ':')]
+                if len(parts) < 2:
+                    continue
+                name = parts[0]
+                filepath = Path(parts[1])
+                if filepath.is_absolute():
+                    continue
+                reference_path = flaskpath / filepath
+                if not (basepath / reference_path).exists():
+                    continue
+                label = name or filepath.name
+                files.append({'label': label, 'href': str(reference_path)})
+
+        payload = {
+            'title': fields.get('title', ''),
+            'authors': fields.get('author', ''),
+            'date': fields.get('date', fields.get('year', '')),
+            'type': entry.type,
+            'citationkey': fields.get('citationkey', ''),
+            'files': files
+        }
+        return jsonify(payload)
 
     return app
 

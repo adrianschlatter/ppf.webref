@@ -97,6 +97,42 @@ def test_loadEntries(client_logged_in, app):
     reference_path.unlink()
 
 
+def test_get_entry_details(client_logged_in, app):
+    references_dir = Path(app.root_path) / 'references'
+    references_dir.mkdir(exist_ok=True)
+    reference_path = references_dir / 'a.pdf'
+    reference_path.write_bytes(b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n')
+
+    with app.app_context():
+        entry = (db.session.execute(
+            db.select(Entry).order_by(Entry.shared_id)
+        ).scalars().first())
+
+    response = client_logged_in.get(
+        f'/getEntry?shared_id={entry.shared_id}'
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload['title'] == 'Feedback Systems'
+    assert payload['authors'] == 'Åström, Karl Johan and Murray, Richard M.'
+    assert payload['date'] == '2020'
+    assert payload['type'] == 'article'
+    assert payload['citationkey'] == 'a'
+    assert payload['files'] == [{'label': 'a.pdf', 'href': 'references/a.pdf'}]
+
+    reference_path.unlink()
+
+
+def test_get_entry_missing_id(client_logged_in):
+    response = client_logged_in.get('/getEntry')
+    assert response.status_code == 400
+
+
+def test_get_entry_not_found(client_logged_in):
+    response = client_logged_in.get('/getEntry?shared_id=999999')
+    assert response.status_code == 404
+
+
 def test_loadEntries_field_query(client_logged_in):
     with client_logged_in as client:
         response = client.post('loadEntries.php',
