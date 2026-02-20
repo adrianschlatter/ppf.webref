@@ -32,6 +32,8 @@ from ppf.webref.search import build_entry_id_query
 
 __version__ = version(__name__)
 
+ENTRY_LIMIT = 200
+
 
 class LoginForm(FlaskForm):
     username = StringField(validators=[InputRequired(), Length(min=4, max=20)],
@@ -130,9 +132,12 @@ def create_app(test=False):
         form = SearchForm()
         searchexpr = form.searchexpr.data
 
-        entry_ids = build_entry_id_query(searchexpr)
+        entry_id_query = build_entry_id_query(searchexpr)
+        entry_ids = db.session.execute(entry_id_query).scalars().all()
+        total_count = len(entry_ids)
+        limited_ids = entry_ids[:ENTRY_LIMIT]
         entryQ = (db.select(Entry)
-                  .where(Entry.shared_id.in_(entry_ids)))
+                  .where(Entry.shared_id.in_(limited_ids)))
 
         entries = [{'shared_id': entry[0].shared_id,
                     **{f: entry[0].fields.get(f, None)
@@ -151,7 +156,11 @@ def create_app(test=False):
             if entry['file'] is not None:
                 entry['file'] = str(entry['file'])
 
-        return jsonify(entries)
+        return jsonify({
+            'entries': entries,
+            'total_count': total_count,
+            'returned_count': len(entries)
+        })
 
     @app.route('/getEntry', methods=['GET'])
     @login_required

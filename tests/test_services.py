@@ -88,12 +88,15 @@ def test_loadEntries(client_logged_in, app):
 
     assert response.status_code == 200
     payload = response.get_json()
-    titles = [entry['title'] for entry in payload]
+    entries = payload['entries']
+    titles = [entry['title'] for entry in entries]
+    assert payload['total_count'] == 4
+    assert payload['returned_count'] == 4
     assert 'Feedback Systems' in titles
     assert 'Feedback Missing File' in titles
     assert 'Feedback Absolute File' in titles
     assert 'Feedback Without File' in titles
-    file_entry = next(entry for entry in payload
+    file_entry = next(entry for entry in entries
                       if entry['title'] == 'Feedback Systems')
     assert file_entry['file'] == 'references/a.pdf'
 
@@ -141,8 +144,12 @@ def test_loadEntries_field_query(client_logged_in):
         response = client.post('loadEntries.php',
                                data={'searchexpr': 'author:Åström'})
 
-    assert b'Feedback Systems' in response.data
-    assert b'Feedback Missing File' not in response.data
+    payload = response.get_json()
+    titles = [entry['title'] for entry in payload['entries']]
+    assert payload['total_count'] == 1
+    assert payload['returned_count'] == 1
+    assert 'Feedback Systems' in titles
+    assert 'Feedback Missing File' not in titles
 
 
 def test_loadEntries_logical_query(client_logged_in):
@@ -151,8 +158,12 @@ def test_loadEntries_logical_query(client_logged_in):
             'loadEntries.php',
             data={'searchexpr': 'title:"Feedback Systems" AND year:2020'})
 
-    assert b'Feedback Systems' in response.data
-    assert b'Feedback Missing File' not in response.data
+    payload = response.get_json()
+    titles = [entry['title'] for entry in payload['entries']]
+    assert payload['total_count'] == 1
+    assert payload['returned_count'] == 1
+    assert 'Feedback Systems' in titles
+    assert 'Feedback Missing File' not in titles
 
 
 def test_loadEntries_invalid_field(client_logged_in):
@@ -160,5 +171,7 @@ def test_loadEntries_invalid_field(client_logged_in):
         response = client.post('loadEntries.php',
                                data={'searchexpr': 'editor:Smith'})
 
-    assert b'Feedback Systems' not in response.data
-    assert b'Feedback Missing File' not in response.data
+    payload = response.get_json()
+    assert payload['total_count'] == 0
+    assert payload['returned_count'] == 0
+    assert payload['entries'] == []

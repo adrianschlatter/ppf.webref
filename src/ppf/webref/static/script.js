@@ -105,8 +105,21 @@ $(document).ready(function () {
             data: form.serialize(), // serializes the form's elements.
             headers: { 'X-CSRFToken': form.attr('csrf_token') },
             success: function (data) {
+                var entries = data.entries || [];
+                var totalCount = data.total_count || 0;
+                var returnedCount = data.returned_count || 0;
+                var countsLabel = returnedCount + " / " + totalCount;
+                var countsElement = $("#entry_counts");
+                countsElement.text(countsLabel);
+                countsElement.removeClass("entry-counts-limited entry-counts-ok");
+                if (returnedCount < totalCount) {
+                    countsElement.addClass("entry-counts-limited");
+                } else {
+                    countsElement.addClass("entry-counts-ok");
+                }
+
                 var html = "<table><tr><th>author/editor</th><th>title</th><th>year</th></tr>";
-                data.forEach(function (entry) {
+                entries.forEach(function (entry) {
                     var author = entry.author || "";
                     var title = entry.title || "";
                     var year = entry.year || "";

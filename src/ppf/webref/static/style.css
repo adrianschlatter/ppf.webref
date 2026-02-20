@@ -22,6 +22,29 @@ body {
     padding: 16px;
 }
 
+#search_bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#search_form {
+    flex: 1 1 auto;
+}
+
+#entry_counts {
+    flex: 0 0 auto;
+}
+
+.entry-counts-limited {
+    color: #b00020;
+}
+
+.entry-counts-ok {
+    color: #000000;
+}
+
 #entry_viewer {
     flex: 0 0 auto;
     border-top: 1px solid #dddddd;

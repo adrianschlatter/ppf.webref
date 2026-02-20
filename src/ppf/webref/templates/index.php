@@ -20,10 +20,13 @@
     <div id="top_bar">
         <h1>ppf.webref: A Web Interface to JabRef</h1>
         <p><a href="{{url_for('logout')}}">Logout</a></p>
-        <form id="search_form" action="{{ url_for('loadEntries') }}">
-            {{ form.csrf_token }}
-            {{ form.searchexpr }}
-        </form>
+        <div id="search_bar">
+            <form id="search_form" action="{{ url_for('loadEntries') }}">
+                {{ form.csrf_token }}
+                {{ form.searchexpr }}
+            </form>
+            <span id="entry_counts"></span>
+        </div>
     </div>
     <div id="entry_table_container">
         <div id="entry_table">
