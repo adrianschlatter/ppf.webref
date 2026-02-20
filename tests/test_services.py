@@ -103,6 +103,42 @@ def test_loadEntries(client_logged_in, app):
     reference_path.unlink()
 
 
+def test_loadEntries_sorting(client_logged_in):
+    with client_logged_in as client:
+        response = client.post('loadEntries.php',
+                               data={'searchexpr': 'Feedback',
+                                     'sort_by': 'year',
+                                     'sort_dir': 'asc'})
+
+    payload = response.get_json()
+    years = [entry['year'] for entry in payload['entries']]
+    assert years == ['2020', '2021', '2022', '2023']
+
+    with client_logged_in as client:
+        response = client.post('loadEntries.php',
+                               data={'searchexpr': 'Feedback',
+                                     'sort_by': 'year',
+                                     'sort_dir': 'desc'})
+
+    payload = response.get_json()
+    years = [entry['year'] for entry in payload['entries']]
+    assert years == ['2023', '2022', '2021', '2020']
+
+
+def test_loadEntries_invalid_sort(client_logged_in):
+    with client_logged_in as client:
+        response = client.post('loadEntries.php',
+                               data={'searchexpr': 'Feedback',
+                                     'sort_by': 'publisher',
+                                     'sort_dir': 'sideways'})
+
+    payload = response.get_json()
+    titles = [entry['title'] for entry in payload['entries']]
+    assert payload['total_count'] == 4
+    assert payload['returned_count'] == 4
+    assert 'Feedback Systems' in titles
+
+
 def test_get_entry_details(client_logged_in, app):
     references_dir = Path(app.root_path) / 'references'
     references_dir.mkdir(exist_ok=True)

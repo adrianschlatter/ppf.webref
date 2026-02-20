@@ -16,6 +16,7 @@ except ImportError:                                     # pragma: no cover
 from flask import Flask, render_template, send_from_directory, jsonify, request
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
+from sqlalchemy import func
 from flask_login import login_required, logout_user
 from flask_talisman import Talisman
 from flask_wtf import FlaskForm, CSRFProtect
@@ -24,7 +25,7 @@ from wtforms.validators import InputRequired, Length
 from ppf.jabref import Entry, Link, split_by_unescaped_sep
 from pathlib import Path
 from ppf.webref.secrets import get_secrets
-from ppf.webref.model import db, User
+from ppf.webref.model import db, User, Field
 from ppf.webref.cli import reg_cli_cmds
 from ppf.webref.passwords import check_password
 from ppf.webref.search import build_entry_id_query
@@ -33,6 +34,7 @@ from ppf.webref.search import build_entry_id_query
 __version__ = version(__name__)
 
 ENTRY_LIMIT = 200
+SORTABLE_FIELDS = {'author', 'title', 'year'}
 
 
 class LoginForm(FlaskForm):
@@ -133,12 +135,30 @@ def create_app(test=False):
         searchexpr = form.searchexpr.data
 
         entry_id_query = build_entry_id_query(searchexpr)
-        entry_ids = db.session.execute(entry_id_query).scalars().all()
-        total_count = len(entry_ids)
-        limited_ids = entry_ids[:ENTRY_LIMIT]
-        entryQ = (db.select(Entry)
-                  .where(Entry.shared_id.in_(limited_ids)))
+        total_count = db.session.execute(
+            db.select(func.count()).select_from(entry_id_query.subquery())
+        ).scalar() or 0
 
+        sort_by = request.form.get('sort_by', 'title')
+        sort_dir = request.form.get('sort_dir', 'asc')
+        if sort_by not in SORTABLE_FIELDS:
+            sort_by = 'title'
+        if sort_dir not in {'asc', 'desc'}:
+            sort_dir = 'asc'
+
+        sort_field = Field.value
+        base_query = (db.select(Entry, Field.value)
+                      .join(Field,
+                            (Field.entry_shared_id == Entry.shared_id)
+                            & (Field.name == sort_by),
+                            isouter=True)
+                      .where(Entry.shared_id.in_(entry_id_query)))
+        if sort_dir == 'desc':
+            sort_field = sort_field.desc()
+        else:
+            sort_field = sort_field.asc()
+
+        entryQ = base_query.order_by(sort_field, Entry.shared_id).limit(ENTRY_LIMIT)
         entries = [{'shared_id': entry[0].shared_id,
                     **{f: entry[0].fields.get(f, None)
                        for f in ['author', 'title', 'year', 'file']}}

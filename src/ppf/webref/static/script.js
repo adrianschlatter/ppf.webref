@@ -7,6 +7,8 @@ $(document).ready(function () {
     var entryViewerCitationKey = $("#entry_viewer_citationkey");
     var entryViewerFiles = $("#entry_viewer_files");
     var selectedRow = null;
+    var sortBy = "title";
+    var sortDir = "asc";
 
     function clearSelectedRow() {
         if (selectedRow) {
@@ -82,6 +84,57 @@ $(document).ready(function () {
         });
     }
 
+    function bindSortHeaders() {
+        $(".sortable").off("click").on("click", function () {
+            var newSort = $(this).data("sort");
+            if (!newSort) {
+                return;
+            }
+            if (sortBy === newSort) {
+                sortDir = sortDir === "asc" ? "desc" : "asc";
+            } else {
+                sortBy = newSort;
+                sortDir = "asc";
+            }
+            $("#search_form").submit();
+        });
+    }
+
+    function buildSortableHeader(key, label) {
+        var indicator = "";
+        if (sortBy === key) {
+            indicator = sortDir === "asc" ? " ▲" : " ▼";
+        }
+        return "<th class=\"sortable\" data-sort=\"" + key + "\">" +
+            label + "<span class=\"sort-indicator\">" + indicator + "</span></th>";
+    }
+
+    function buildTable(entries) {
+        var html = "<table><tr>" +
+            buildSortableHeader("author", "author/editor") +
+            buildSortableHeader("title", "title") +
+            buildSortableHeader("year", "year") +
+            "</tr>";
+        entries.forEach(function (entry) {
+            var author = entry.author || "";
+            var title = entry.title || "";
+            var year = entry.year || "";
+            var titleCell;
+            if (entry.file) {
+                titleCell = "<a href=\"" + entry.file + "\">" + title + "</a>";
+            } else {
+                titleCell = title;
+            }
+            html += "<tr class=\"entry-row\" data-shared-id=\"" + entry.shared_id + "\">" +
+                "<td>" + author + "</td>" +
+                "<td>" + titleCell + "</td>" +
+                "<td>" + year + "</td>" +
+                "</tr>";
+        });
+        html += "</table>";
+        return html;
+    }
+
     $("#entry_viewer_close").on("click", function () {
         hideEntryViewer();
     });
@@ -102,7 +155,7 @@ $(document).ready(function () {
         $.ajax({
             type: "POST",
             url: url,
-            data: form.serialize(), // serializes the form's elements.
+            data: form.serialize() + "&sort_by=" + encodeURIComponent(sortBy) + "&sort_dir=" + encodeURIComponent(sortDir),
             headers: { 'X-CSRFToken': form.attr('csrf_token') },
             success: function (data) {
                 var entries = data.entries || [];
@@ -118,26 +171,10 @@ $(document).ready(function () {
                     countsElement.addClass("entry-counts-ok");
                 }
 
-                var html = "<table><tr><th>author/editor</th><th>title</th><th>year</th></tr>";
-                entries.forEach(function (entry) {
-                    var author = entry.author || "";
-                    var title = entry.title || "";
-                    var year = entry.year || "";
-                    var titleCell;
-                    if (entry.file) {
-                        titleCell = "<a href=\"" + entry.file + "\">" + title + "</a>";
-                    } else {
-                        titleCell = title;
-                    }
-                    html += "<tr class=\"entry-row\" data-shared-id=\"" + entry.shared_id + "\">" +
-                        "<td>" + author + "</td>" +
-                        "<td>" + titleCell + "</td>" +
-                        "<td>" + year + "</td>" +
-                        "</tr>";
-                });
-                html += "</table>";
+                var html = buildTable(entries);
                 document.getElementById("entry_table").innerHTML = html;
                 bindEntryRows();
+                bindSortHeaders();
                 hideEntryViewer();
             }
         });
