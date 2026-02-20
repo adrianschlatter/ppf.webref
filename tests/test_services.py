@@ -86,13 +86,16 @@ def test_loadEntries(client_logged_in, app):
         response = client.post('loadEntries.php',
                                data={'searchexpr': 'Feedback'})
 
-    assert b'<table>' in response.data
-    assert b'</table>' in response.data
-    assert (b'<a href="references/a.pdf">Feedback Systems</a>'
-            in response.data)
-    assert b'<td>Feedback Missing File</td>' in response.data
-    assert b'<td>Feedback Absolute File</td>' in response.data
-    assert b'<td>Feedback Without File</td>' in response.data
+    assert response.status_code == 200
+    payload = response.get_json()
+    titles = [entry['title'] for entry in payload]
+    assert 'Feedback Systems' in titles
+    assert 'Feedback Missing File' in titles
+    assert 'Feedback Absolute File' in titles
+    assert 'Feedback Without File' in titles
+    file_entry = next(entry for entry in payload
+                      if entry['title'] == 'Feedback Systems')
+    assert file_entry['file'] == 'references/a.pdf'
 
     reference_path.unlink()
 

@@ -105,8 +105,27 @@ $(document).ready(function () {
             data: form.serialize(), // serializes the form's elements.
             headers: { 'X-CSRFToken': form.attr('csrf_token') },
             success: function (data) {
-                document.getElementById("entry_table").innerHTML = data;
+                var html = "<table><tr><th>author/editor</th><th>title</th><th>year</th></tr>";
+                data.forEach(function (entry) {
+                    var author = entry.author || "";
+                    var title = entry.title || "";
+                    var year = entry.year || "";
+                    var titleCell;
+                    if (entry.file) {
+                        titleCell = "<a href=\"" + entry.file + "\">" + title + "</a>";
+                    } else {
+                        titleCell = title;
+                    }
+                    html += "<tr class=\"entry-row\" data-shared-id=\"" + entry.shared_id + "\">" +
+                        "<td>" + author + "</td>" +
+                        "<td>" + titleCell + "</td>" +
+                        "<td>" + year + "</td>" +
+                        "</tr>";
+                });
+                html += "</table>";
+                document.getElementById("entry_table").innerHTML = html;
                 bindEntryRows();
+                hideEntryViewer();
             }
         });
     });

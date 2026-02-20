@@ -148,8 +148,10 @@ def create_app(test=False):
                 if not (basepath / entry['file']).exists() \
                         or filepath.is_absolute():
                     entry['file'] = None
+            if entry['file'] is not None:
+                entry['file'] = str(entry['file'])
 
-        return render_template('entry_table.tmpl', entries=entries)
+        return jsonify(entries)
 
     @app.route('/getEntry', methods=['GET'])
     @login_required
