@@ -1,9 +1,11 @@
 import pytest
+import shutil
 from os import environ, mkdir, linesep
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from ppf.webref import create_app
 from ppf.webref.model import db, User
+from ppf.webref.passwords import hash_password
 
 
 @pytest.fixture()
@@ -24,18 +26,31 @@ def app():
                                   'sqldatabasename = test']))
 
         app = create_app(test=True)
+        references_dir = Path(app.root_path) / 'references'
+        if references_dir.is_symlink():
+            references_dir.unlink()
+        elif references_dir.exists():
+            shutil.rmtree(references_dir)
+
         user = User(username='existing_user',
-                    password=(b'$2b$12$jClUReA4eBjVLhTnNUf.QOHOKMg4IcFpRuu'
-                              b'FHVYaLRXJ0msu0MG0K'))  # hashed 'password'
+                    pw_hash=hash_password('password'))
         with app.app_context():
+            db.drop_all()
             db.create_all()
             db.session.add(user)
             db.session.commit()
 
         yield app
 
+        if references_dir.is_symlink():
+            references_dir.unlink()
+        elif references_dir.exists():
+            shutil.rmtree(references_dir)
+
         with app.app_context():
+            db.session.remove()
             db.drop_all()
+            db.engine.dispose()
 
 
 @pytest.fixture()

@@ -29,6 +29,19 @@ def test_wrong_credentials(client, password):
         assert current_user.is_authenticated is False
 
 
+def test_wrong_password_existing_user(client):
+    with client:
+        client.post('login',
+                    data={'username': 'existing_user', 'password': 'wrong'})
+        assert current_user.is_authenticated is False
+
+
+def test_login_get_renders(client):
+    response = client.get('login')
+    assert response.status_code == 200
+    assert b'Login' in response.data
+
+
 def test_correct_credentials(client, protected_endpoint):
     with client:
         client.post('login',
@@ -104,5 +117,5 @@ def test_passwd_existing(app, runner, monkeypatch):
         result = runner.invoke(args=['passwd', 'existing_user'])
         assert result.exit_code == 0
         user = User.query.filter_by(username='existing_user').first()
-        assert user.password is not None
-        assert user.password != 'password'  # password is hashed
+        assert user.pw_hash is not None
+        assert user.pw_hash != b'password'  # password is hashed

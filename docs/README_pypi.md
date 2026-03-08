@@ -1,5 +1,7 @@
 # ppf.webref
 
+<img alt="pypi downloads/month" src="https://img.shields.io/pypi/dm/ppf.webref.svg">
+
 ppf.webref is a web app providing an interface to a [JabRef SQL
 database](https://docs.jabref.org/collaborative-work/sqldatabase).
 Access your references from anywhere in the world and from any device with a
@@ -12,6 +14,21 @@ this database. Voila: Your references just became accessible worldwide.
 Note: ppf.webref provides *read-only* access to your library. To add, edit, or
 delete entries from your library, you still need a standard JabRef installation
 somewhere.
+
+Use the search box with simple patterns to narrow results:
+
+* A word on its own searches across common parts like title, author, and year.
+* To focus on one part, start with one of these labels: author:, title:,
+  publisher:, year:, citationkey:, keywords:, month:, url:, file:
+* Put a phrase in quotes: title:"Feedback Systems"
+* Use the words AND / OR to combine, and NOT to exclude. You can group with
+  parentheses.
+
+Example:
+
+```
+author:Åström OR (title:"Feedback Systems" AND NOT year:2022)
+```
 
 
 # Installation
@@ -109,5 +126,7 @@ everyone to adhere to it, just make sure you do as well.
 
 # Changelog
 
+* 0.2.0: Upgrade vulnerable dependencies, improve storage of hashes. Add query
+  language, sorting of results, entry viewer.
 * 0.1.1: Fix problem with path handling. Improve docs.
 * 0.1: Basic read-only functionality

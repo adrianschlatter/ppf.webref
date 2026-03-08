@@ -1,5 +1,7 @@
 # ppf.webref
 
+<img alt="pypi downloads/month" src="https://img.shields.io/pypi/dm/ppf.webref.svg">
+
 ppf.webref is a web app providing an interface to a [JabRef SQL
 database](https://docs.jabref.org/collaborative-work/sqldatabase).
 Access your references from anywhere in the world and from any device with a
@@ -16,6 +18,20 @@ somewhere.
 <p align="middle">
 <img alt="Screenshot" src="imgs/webref_screenshot.png" height=180>
 </p>
+
+Use the search box with simple patterns to narrow results:
+
+* A word on its own searches across common parts like title, author, and year.
+* To focus on one part, start with one of these labels: author:, title:,
+  publisher:, year:, citationkey:, keywords:, month:, url:, file:
+* Put a phrase in quotes: title:"Feedback Systems"
+* Use AND / OR to combine, and NOT to exclude. You can group with parentheses.
+
+Examples:
+
+```
+author:Åström OR (title:"Feedback Systems" AND NOT year:2022)
+```
 
 
 # Installation
@@ -84,6 +100,7 @@ flask --app ppf.webref passwd <username>
 which will ask for and store (a salted hash of) the password in the
 user table.
 
+
 Now we are able to login, but the entry table will not provide clickable links
 so you can easily open your documents. For `ppf.webref` to be able to serve the
 documents themselves, we have to put them under `<app.root_path>/references`
@@ -113,5 +130,7 @@ everyone to adhere to it, just make sure you do as well.
 
 # Changelog
 
+* 0.2.0: Upgrade vulnerable dependencies, improve storage of hashes. Add query
+  language, sorting of results, entry viewer.
 * 0.1.1: Fix problem with path handling. Improve docs.
 * 0.1: Basic read-only functionality

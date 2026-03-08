@@ -8,20 +8,33 @@ provides read-only access to the library without any possibility to modify
 existing entries or to add new ones.
 """
 
-from flask import Flask, render_template, send_from_directory
+try:
+    from importlib_metadata import version
+except ImportError:                                     # pragma: no cover
+    from importlib.metadata import version              # pragma: no cover
+
+from flask import Flask, render_template, send_from_directory, jsonify, request
 from flask import url_for, redirect
 from flask_login import login_user, LoginManager
+from sqlalchemy import func
 from flask_login import login_required, logout_user
-from flask_bcrypt import Bcrypt
 from flask_talisman import Talisman
 from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length
-from ppf.jabref import Entry, Field, split_by_unescaped_sep
+from ppf.jabref import Entry, Link, split_by_unescaped_sep
 from pathlib import Path
 from ppf.webref.secrets import get_secrets
-from ppf.webref.model import db, User
+from ppf.webref.model import db, User, Field
 from ppf.webref.cli import reg_cli_cmds
+from ppf.webref.passwords import check_password
+from ppf.webref.search import build_entry_id_query
+
+
+__version__ = version(__name__)
+
+ENTRY_LIMIT = 200
+SORTABLE_FIELDS = {'author', 'title', 'year'}
 
 
 class LoginForm(FlaskForm):
@@ -74,7 +87,6 @@ def create_app(test=False):
            'base-uri': "'none'",
            'frame-ancestors': "'none'"}
     Talisman(app, content_security_policy=csp, force_https=False)
-    bcrypt = Bcrypt(app)
 
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -97,8 +109,7 @@ def create_app(test=False):
         if form.validate_on_submit():  # POST request? And valid?
             user = User.query.filter_by(username=form.username.data).first()
             if user:
-                if bcrypt.check_password_hash(
-                        user.password, form.password.data):
+                if check_password(form.password.data, user.pw_hash):
                     login_user(user)
                     return redirect(url_for('root'))
 
@@ -123,14 +134,38 @@ def create_app(test=False):
         form = SearchForm()
         searchexpr = form.searchexpr.data
 
-        patternmatchingQ = (db.select(Field.entry_shared_id)
-                            .where(Field.value.op('regexp')(searchexpr))
-                            .distinct())
-        entryQ = (db.select(Entry)
-                  .where(Entry.shared_id.in_(patternmatchingQ)))
+        entry_id_query = build_entry_id_query(searchexpr)
+        entry_id_subquery = entry_id_query.subquery()
+        total_count = db.session.execute(
+            db.select(func.count(func.distinct(entry_id_subquery.c.shared_id)))
+            .select_from(entry_id_subquery)
+        ).scalar() or 0
 
-        entries = [{f: entry[0].fields.get(f, None)
-                   for f in ['author', 'title', 'year', 'file']}
+        sort_by = request.form.get('sort_by', 'title')
+        sort_dir = request.form.get('sort_dir', 'asc')
+        if sort_by not in SORTABLE_FIELDS:
+            sort_by = 'title'
+        if sort_dir not in {'asc', 'desc'}:
+            sort_dir = 'asc'
+
+        sort_field = Field.value
+        base_query = (db.select(Entry, Field.value)
+                      .join(Field,
+                            (Field.entry_shared_id == Entry.shared_id)
+                            & (Field.name == sort_by),
+                            isouter=True)
+                      .where(Entry.shared_id.in_(entry_id_query)))
+        if sort_dir == 'desc':
+            sort_field = sort_field.desc()
+        else:
+            sort_field = sort_field.asc()
+
+        entryQ = (base_query
+                  .order_by(sort_field, Entry.shared_id)
+                  .limit(ENTRY_LIMIT))
+        entries = [{'shared_id': entry[0].shared_id,
+                    **{f: entry[0].fields.get(f, None)
+                       for f in ['author', 'title', 'year', 'file']}}
                    for entry in db.session.execute(entryQ)]
 
         flaskpath = Path('references')
@@ -142,8 +177,58 @@ def create_app(test=False):
                 if not (basepath / entry['file']).exists() \
                         or filepath.is_absolute():
                     entry['file'] = None
+            if entry['file'] is not None:
+                entry['file'] = str(entry['file'])
 
-        return render_template('entry_table.tmpl', entries=entries)
+        return jsonify({
+            'entries': entries,
+            'total_count': total_count,
+            'returned_count': len(entries)
+        })
+
+    @app.route('/getEntry', methods=['GET'])
+    @login_required
+    def get_entry():
+        shared_id = request.args.get('shared_id', type=int)
+        if shared_id is None:
+            return jsonify({'error': 'shared_id is required'}), 400
+
+        entry = db.session.get(Entry, shared_id)
+        if entry is None:
+            return jsonify({'error': 'Entry not found'}), 404
+
+        fields = entry.fields
+
+        files = []
+        file_value = fields.get('file', '')
+        if file_value:
+            flaskpath = Path('references')
+            basepath = Path(app.root_path)
+            links = split_by_unescaped_sep(file_value, ';')
+            for link in links:
+                parts = [Link.unescape(part)
+                         for part in split_by_unescaped_sep(link, ':')]
+                if len(parts) < 2:
+                    continue
+                name = parts[0]
+                filepath = Path(parts[1])
+                if filepath.is_absolute():
+                    continue
+                reference_path = flaskpath / filepath
+                if not (basepath / reference_path).exists():
+                    continue
+                label = name or filepath.name
+                files.append({'label': label, 'href': str(reference_path)})
+
+        payload = {
+            'title': fields.get('title', ''),
+            'authors': fields.get('author', ''),
+            'date': fields.get('date', fields.get('year', '')),
+            'type': entry.type,
+            'citationkey': fields.get('citationkey', ''),
+            'files': files
+        }
+        return jsonify(payload)
 
     return app
 
