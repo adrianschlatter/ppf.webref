@@ -15,6 +15,21 @@ Note: ppf.webref provides *read-only* access to your library. To add, edit, or
 delete entries from your library, you still need a standard JabRef installation
 somewhere.
 
+Use the search box with simple patterns to narrow results:
+
+* A word on its own searches across common parts like title, author, and year.
+* To focus on one part, start with one of these labels: author:, title:,
+  publisher:, year:, citationkey:, keywords:, month:, url:, file:
+* Put a phrase in quotes: title:"Feedback Systems"
+* Use the words AND / OR to combine, and NOT to exclude. You can group with
+  parentheses.
+
+Example:
+
+```
+author:Åström OR (title:"Feedback Systems" AND NOT year:2022)
+```
+
 
 # Installation
 

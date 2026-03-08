@@ -19,6 +19,20 @@ somewhere.
 <img alt="Screenshot" src="imgs/webref_screenshot.png" height=180>
 </p>
 
+Use the search box with simple patterns to narrow results:
+
+* A word on its own searches across common parts like title, author, and year.
+* To focus on one part, start with one of these labels: author:, title:,
+  publisher:, year:, citationkey:, keywords:, month:, url:, file:
+* Put a phrase in quotes: title:"Feedback Systems"
+* Use AND / OR to combine, and NOT to exclude. You can group with parentheses.
+
+Examples:
+
+```
+author:Åström OR (title:"Feedback Systems" AND NOT year:2022)
+```
+
 
 # Installation
 
@@ -85,6 +99,7 @@ flask --app ppf.webref passwd <username>
 
 which will ask for and store (a salted hash of) the password in the
 user table.
+
 
 Now we are able to login, but the entry table will not provide clickable links
 so you can easily open your documents. For `ppf.webref` to be able to serve the
