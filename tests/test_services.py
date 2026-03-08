@@ -88,7 +88,9 @@ def test_loadEntries(client_logged_in, app):
 
     assert response.status_code == 200
     payload = response.get_json()
+    print(payload)
     entries = payload['entries']
+    print(entries)
     titles = [entry['title'] for entry in entries]
     assert payload['total_count'] == 4
     assert payload['returned_count'] == 4
@@ -133,6 +135,7 @@ def test_loadEntries_invalid_sort(client_logged_in):
                                      'sort_dir': 'sideways'})
 
     payload = response.get_json()
+    print(payload['entries'])
     titles = [entry['title'] for entry in payload['entries']]
     assert payload['total_count'] == 4
     assert payload['returned_count'] == 4
