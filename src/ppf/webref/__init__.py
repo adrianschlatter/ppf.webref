@@ -135,8 +135,10 @@ def create_app(test=False):
         searchexpr = form.searchexpr.data
 
         entry_id_query = build_entry_id_query(searchexpr)
+        entry_id_subquery = entry_id_query.subquery()
         total_count = db.session.execute(
-            db.select(func.count()).select_from(entry_id_query.subquery())
+            db.select(func.count(func.distinct(entry_id_subquery.c.shared_id)))
+            .select_from(entry_id_subquery)
         ).scalar() or 0
 
         sort_by = request.form.get('sort_by', 'title')
