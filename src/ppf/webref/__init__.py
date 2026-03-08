@@ -158,7 +158,9 @@ def create_app(test=False):
         else:
             sort_field = sort_field.asc()
 
-        entryQ = base_query.order_by(sort_field, Entry.shared_id).limit(ENTRY_LIMIT)
+        entryQ = (base_query
+                  .order_by(sort_field, Entry.shared_id)
+                  .limit(ENTRY_LIMIT))
         entries = [{'shared_id': entry[0].shared_id,
                     **{f: entry[0].fields.get(f, None)
                        for f in ['author', 'title', 'year', 'file']}}
