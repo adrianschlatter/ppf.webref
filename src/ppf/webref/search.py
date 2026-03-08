@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from sqlalchemy import exists, false
 
@@ -21,12 +22,12 @@ ALLOWED_FIELDS = {
 @dataclass(frozen=True)
 class Token:
     kind: str
-    value: str | None = None
+    value: Optional[str] = None
 
 
 @dataclass(frozen=True)
 class Term:
-    field: str | None
+    field: Optional[str]
     value: str
 
 
