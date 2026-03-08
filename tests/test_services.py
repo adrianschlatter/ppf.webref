@@ -49,6 +49,8 @@ def client_logged_in(app):
             entry_no_file,
         ])
         db.session.commit()
+        entries = db.session.execute(db.select(Entry)).scalars().all()
+        print([entry.fields.get('title') for entry in entries])
 
     return client
 
